@@ -6,46 +6,49 @@
     <title>>Elden Pixel - Hardcore Souls-like</title>
 </head>
 <body>
-  {
+ {
             margin: 0;
-            background-color: #060609;
-            color: #e0e0e0;
-            font-family: 'Courier New', Courier, monospace;
+            background-color: #030305;
+            color: #f0e6d2;
+            font-family: 'Cinzel', 'Courier New', serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
             overflow: hidden;
+            user-select: none;
         }
         h1 {
-            margin: 3px;
-            font-size: 18px;
+            margin: 5px;
+            font-size: 20px;
             color: #d4af37;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+            letter-spacing: 3px;
+            text-shadow: 0 0 12px rgba(212, 175, 55, 0.7);
         }
         canvas {
-            border: 3px solid #332d20;
-            background-color: #0d0d12;
-            box-shadow: 0 0 30px rgba(212, 175, 55, 0.15);
+            border: 2px solid #5a4d35;
+            background: linear-gradient(to bottom, #090912, #141422);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(0, 0, 0, 0.8);
+            border-radius: 4px;
         }
         .controls {
             margin-top: 8px;
             font-size: 11px;
-            color: #888;
+            color: #a09580;
             text-align: center;
+            letter-spacing: 1px;
         }
-        span { color: #d4af37; font-weight: bold; }
+        span { color: #f1c40f; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h1>Elden Pixel: Ultimate RPG Edition</h1>
-    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <h1>Elden Soul: Dark Fantasy Art Edition</h1>
+    <canvas id="gameCanvas" width="900" height="520"></canvas>
     <div class="controls">
-        Di chuyển: <span>A / D</span> | Nhảy: <span>W</span> | Tấn công: <span>J</span> | Né: <span>K</span> | Uống máu: <span>Q</span> | Cửa hàng: <span>E</span> | Vào Hầm Ngục Phụ: <span>T</span>
+        Di chuyển: <span>A / D</span> | Nhảy: <span>W</span> | Tấn công: <span>J</span> | Né tránh: <span>K</span> | Bình Máu: <span>Q</span> | Shop: <span>E</span> | Hầm Ngục Boss Nhánh: <span>T</span>
     </div>
 
 <script>
@@ -57,43 +60,45 @@ let gameState = "START"; // START, PLAYING, SHOP, SIDE_DUNGEON, GAMEOVER, VICTOR
 let screenShake = 0;
 let particles = [];
 let slashEffects = [];
+let floatingTexts = [];
 
 let player = {
-    x: 200, y: 380, width: 24, height: 40,
-    vx: 0, vy: 0, speed: 3.5, jumpForce: -10, gravity: 0.5,
-    grounded: false, hp: 100, maxHp: 100,
-    stamina: 100, maxStamina: 100, staminaRegen: 0.8,
+    x: 200, y: 390, width: 32, height: 50,
+    vx: 0, vy: 0, speed: 4, jumpForce: -11, gravity: 0.55,
+    grounded: false, hp: 120, maxHp: 120,
+    stamina: 100, maxStamina: 100, staminaRegen: 1.0,
     facing: 1, isAttacking: false, attackTimer: 0,
     isRolling: false, rollTimer: 0, invincible: false, hitFlash: 0,
-    runes: 0, flasks: 2, maxFlasks: 2,
-    weapon: "Thanh Kiếm Rỉ Sét",
-    damage: 2.5,
-    weaponRange: 30,
+    runes: 0, flasks: 3, maxFlasks: 3,
+    weapon: "Hiệp Sĩ Kiếm Rỉ",
+    damage: 3.5,
+    weaponRange: 45,
     hasMoonveil: false,
-    hasRiversOfBlood: false
+    hasRiversOfBlood: false,
+    animFrame: 0
 };
 
 let npc = {
-    x: 80, y: 370, width: 24, height: 40,
-    name: "Merchant Kale",
-    dialogue: "Muốn sở hữu thanh kiếm huyền thoại? Hãy hạ gục các Boss nhánh trong Hầm Ngục [T]!"
+    x: 90, y: 390, width: 30, height: 50,
+    name: "Thương Nhân Kale"
 };
 
-// Cấu hình các loại Boss (Boss chính + Boss nhánh)
+// Cấu hình Boss Quỷ Chi Tiết
 let bosses = {
     main: {
-        name: "The Void Sentinel", x: 650, y: 340, width: 50, height: 80,
-        hp: 500, maxHp: 500, state: "IDLE", timer: 0, facing: -1, hitFlash: 0, reward: 200, type: "MAIN"
+        name: "Malakor - Hắc Ám Quỷ Vương", x: 720, y: 340, width: 60, height: 90,
+        hp: 600, maxHp: 600, state: "IDLE", timer: 0, facing: -1, hitFlash: 0, reward: 300, type: "MAIN",
+        color: "#8b0000", wingColor: "#3a0000"
     },
     branch1: {
-        name: "Vệ Binh Rừng Sâu (Tree Sentinel)", x: 600, y: 340, width: 45, height: 75,
-        hp: 350, maxHp: 350, state: "IDLE", timer: 0, facing: -1, hitFlash: 0, reward: 150, type: "BRANCH_1",
-        unlocked: true, defeated: false
+        name: "Azazel - Quỷ Vương Rừng Sâu", x: 700, y: 340, width: 55, height: 85,
+        hp: 400, maxHp: 400, state: "IDLE", timer: 0, facing: -1, hitFlash: 0, reward: 200, type: "BRANCH_1",
+        unlocked: true, defeated: false, color: "#2e7d32", wingColor: "#1b4d20"
     },
     branch2: {
-        name: "Kỵ Sĩ Hắc Ám (Night Cavalry)", x: 600, y: 340, width: 45, height: 75,
-        hp: 400, maxHp: 400, state: "IDLE", timer: 0, facing: -1, hitFlash: 0, reward: 250, type: "BRANCH_2",
-        unlocked: false, defeated: false
+        name: "Balrog - Kỵ Sĩ Hỏa Ngục", x: 700, y: 340, width: 58, height: 88,
+        hp: 500, maxHp: 500, state: "IDLE", timer: 0, facing: -1, hitFlash: 0, reward: 400, type: "BRANCH_2",
+        unlocked: false, defeated: false, color: "#b71c1c", wingColor: "#ff6f00"
     }
 };
 
@@ -101,13 +106,13 @@ let currentBoss = bosses.main;
 let projectiles = [];
 let keys = {};
 
-// Khởi tạo hiệu ứng tro tàn môi trường
-for (let i = 0; i < 40; i++) {
+// Khởi tạo hiệu ứng tro tàn không gian
+for (let i = 0; i < 50; i++) {
     particles.push({
         x: Math.random() * canvas.width, y: Math.random() * canvas.height,
         size: Math.random() * 2.5 + 0.5,
-        speedY: -(Math.random() * 0.8 + 0.2), speedX: (Math.random() - 0.5) * 0.5,
-        alpha: Math.random() * 0.7 + 0.2
+        speedY: -(Math.random() * 0.6 + 0.2), speedX: (Math.random() - 0.5) * 0.4,
+        alpha: Math.random() * 0.6 + 0.2
     });
 }
 
@@ -126,12 +131,12 @@ window.addEventListener("keydown", (e) => {
 
     // Tương tác NPC / Shop
     if (gameState === "PLAYING" && key === "e") {
-        if (Math.abs(player.x - npc.x) < 60) gameState = "SHOP";
+        if (Math.abs(player.x - npc.x) < 70) gameState = "SHOP";
     } else if (gameState === "SHOP" && (key === "e" || key === "escape" || key === "x")) {
         gameState = "PLAYING";
     }
 
-    // Chuyển sang màn phụ / hầm ngục (Dungeon)
+    // Màn phụ Hầm Ngục [T]
     if (gameState === "PLAYING" && key === "t") {
         gameState = "SIDE_DUNGEON";
         loadBoss(bosses.branch1);
@@ -140,23 +145,24 @@ window.addEventListener("keydown", (e) => {
         loadBoss(bosses.main);
     }
 
-    // Uống máu
+    // Bình Máu [Q]
     if ((gameState === "PLAYING" || gameState === "SIDE_DUNGEON") && key === "q") {
         if (player.flasks > 0 && player.hp < player.maxHp) {
             player.flasks--;
-            player.hp = Math.min(player.maxHp, player.hp + 50);
-            spawnParticles(player.x + player.width/2, player.y + player.height/2, "#2ecc71", 12);
+            player.hp = Math.min(player.maxHp, player.hp + 60);
+            spawnParticles(player.x + player.width/2, player.y + player.height/2, "#2ecc71", 16);
+            addFloatingText("+60 HP", player.x, player.y - 20, "#2ecc71");
         }
     }
 
-    // Cửa hàng nâng cấp
+    // Shop nâng cấp
     if (gameState === "SHOP") {
-        if (key === "1" && player.runes >= 50) { player.runes -= 50; player.maxFlasks++; player.flasks = player.maxFlasks; }
-        if (key === "2" && player.runes >= 80) { player.runes -= 80; player.maxHp += 30; player.hp = player.maxHp; }
-        if (key === "3" && player.runes >= 100) { player.runes -= 100; player.staminaRegen += 0.3; }
+        if (key === "1" && player.runes >= 60) { player.runes -= 60; player.maxFlasks++; player.flasks = player.maxFlasks; }
+        if (key === "2" && player.runes >= 90) { player.runes -= 90; player.maxHp += 40; player.hp = player.maxHp; }
+        if (key === "3" && player.runes >= 120) { player.runes -= 120; player.staminaRegen += 0.35; }
     }
 
-    // Chọn Boss nhánh trong màn phụ
+    // Chọn Boss trong Hầm Ngục
     if (gameState === "SIDE_DUNGEON") {
         if (key === "1") loadBoss(bosses.branch1);
         if (key === "2" && bosses.branch1.defeated) loadBoss(bosses.branch2);
@@ -170,7 +176,7 @@ window.addEventListener("keyup", (e) => {
 function loadBoss(b) {
     currentBoss = b;
     currentBoss.hp = currentBoss.maxHp;
-    currentBoss.x = 650;
+    currentBoss.x = 720;
     currentBoss.state = "IDLE";
     currentBoss.timer = 0;
     projectiles = [];
@@ -180,20 +186,25 @@ function resetGame() {
     player.hp = player.maxHp;
     player.stamina = player.maxStamina;
     player.x = 200;
-    player.y = 380;
+    player.y = 390;
     loadBoss(bosses.main);
     projectiles = [];
     slashEffects = [];
+    floatingTexts = [];
 }
 
-function spawnParticles(x, y, color, count = 10) {
+function spawnParticles(x, y, color, count = 12) {
     for (let i = 0; i < count; i++) {
         particles.push({
             x: x, y: y,
-            vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6 - 2,
-            size: Math.random() * 3 + 1, color: color, life: 30
+            vx: (Math.random() - 0.5) * 7, vy: (Math.random() - 0.5) * 7 - 2,
+            size: Math.random() * 4 + 1, color: color, life: 35
         });
     }
+}
+
+function addFloatingText(text, x, y, color) {
+    floatingTexts.push({ text: text, x: x, y: y, color: color, life: 40 });
 }
 
 function update() {
@@ -202,7 +213,7 @@ function update() {
     for (let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
         if (p.life !== undefined) {
-            p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.life--;
+            p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.life--;
             if (p.life <= 0) particles.splice(i, 1);
         } else {
             p.y += p.speedY; p.x += p.speedX;
@@ -216,6 +227,13 @@ function update() {
         if (slashEffects[i].life <= 0) slashEffects.splice(i, 1);
     }
 
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        let ft = floatingTexts[i];
+        ft.y -= 1;
+        ft.life--;
+        if (ft.life <= 0) floatingTexts.splice(i, 1);
+    }
+
     if (player.hitFlash > 0) player.hitFlash--;
     if (currentBoss.hitFlash > 0) currentBoss.hitFlash--;
 
@@ -227,8 +245,8 @@ function update() {
 
     if (!player.isRolling) {
         player.vx = 0;
-        if (keys['a']) { player.vx = -player.speed; player.facing = -1; }
-        if (keys['d']) { player.vx = player.speed; player.facing = 1; }
+        if (keys['a']) { player.vx = -player.speed; player.facing = -1; player.animFrame += 0.2; }
+        if (keys['d']) { player.vx = player.speed; player.facing = 1; player.animFrame += 0.2; }
 
         if (keys['w'] && player.grounded) {
             player.vy = player.jumpForce;
@@ -238,19 +256,19 @@ function update() {
         if (keys['k'] && player.stamina >= 25 && !player.isRolling) {
             player.stamina -= 25;
             player.isRolling = true;
-            player.rollTimer = 20;
+            player.rollTimer = 22;
             player.invincible = true;
-            player.vx = player.facing * 7.5;
-            spawnParticles(player.x + player.width/2, player.y + player.height/2, "#00ffff", 8);
+            player.vx = player.facing * 8.5;
+            spawnParticles(player.x + player.width/2, player.y + player.height/2, "#00ffff", 10);
         }
 
         if (keys['j'] && player.stamina >= 15 && !player.isAttacking) {
             player.stamina -= 15;
             player.isAttacking = true;
-            player.attackTimer = 15;
-            let slashX = player.facing === 1 ? player.x + player.width : player.x - 40;
-            let slashColor = player.weapon.includes("Moonveil") ? "#3498db" : (player.weapon.includes("Rivers") ? "#e74c3c" : "#fff");
-            slashEffects.push({ x: slashX, y: player.y, facing: player.facing, life: 10, color: slashColor });
+            player.attackTimer = 14;
+            let slashX = player.facing === 1 ? player.x + player.width : player.x - 50;
+            let slashColor = player.hasRiversOfBlood ? "#ff2222" : (player.hasMoonveil ? "#00bfff" : "#f1c40f");
+            slashEffects.push({ x: slashX, y: player.y + 10, facing: player.facing, life: 12, color: slashColor, weapon: player.weapon });
         }
     }
 
@@ -268,15 +286,15 @@ function update() {
     player.x += player.vx;
     player.y += player.vy;
 
-    if (player.y + player.height > 420) {
-        player.y = 420 - player.height;
+    if (player.y + player.height > 440) {
+        player.y = 440 - player.height;
         player.vy = 0;
         player.grounded = true;
     }
     if (player.x < 20) player.x = 20;
-    if (player.x + player.width > 780) player.x = 780 - player.width;
+    if (player.x + player.width > 880) player.x = 880 - player.width;
 
-    // --- Va chạm Player đánh Boss ---
+    // --- Va chạm Player tấn công Boss ---
     if (player.isAttacking) {
         let hitBoxX = player.facing === 1 ? player.x + player.width : player.x - player.weaponRange;
         let hitBoxWidth = player.weaponRange;
@@ -287,8 +305,9 @@ function update() {
             player.y + player.height > currentBoss.y
         ) {
             currentBoss.hp -= player.damage;
-            currentBoss.hitFlash = 5;
-            spawnParticles(currentBoss.x + currentBoss.width/2, currentBoss.y + currentBoss.height/2, "#ff3333", 5);
+            currentBoss.hitFlash = 6;
+            spawnParticles(currentBoss.x + currentBoss.width/2, currentBoss.y + currentBoss.height/2, "#ff3333", 8);
+            addFloatingText(`-${player.damage}`, currentBoss.x + currentBoss.width/2, currentBoss.y, "#ff4d4d");
             
             if (currentBoss.hp <= 0) {
                 player.runes += currentBoss.reward;
@@ -298,9 +317,9 @@ function update() {
                     currentBoss.defeated = true;
                     bosses.branch2.unlocked = true;
                     player.hasMoonveil = true;
-                    player.weapon = "Moonveil (Kiếm Ánh Trăng)";
-                    player.damage = 4.5;
-                    player.weaponRange = 45;
+                    player.weapon = "Moonveil (Kiếm Nguyệt Quang)";
+                    player.damage = 6.0;
+                    player.weaponRange = 55;
                     alert("CHIẾN THẮNG! Nhận được vũ khí huyền thoại: Moonveil!");
                     gameState = "PLAYING";
                     loadBoss(bosses.main);
@@ -308,9 +327,9 @@ function update() {
                     currentBoss.defeated = true;
                     player.hasRiversOfBlood = true;
                     player.weapon = "Rivers of Blood (Huyết Kiếm)";
-                    player.damage = 7.0;
-                    player.weaponRange = 55;
-                    alert("HUYỀN THOẠI! Đã mở khóa Rivers of Blood - Sức mạnh tối thượng!");
+                    player.damage = 9.5;
+                    player.weaponRange = 65;
+                    alert("HUYỀN THOẠI! Đã mở khóa Rivers of Blood - Tối Thượng Sức Mạnh!");
                     gameState = "PLAYING";
                     loadBoss(bosses.main);
                 }
@@ -318,92 +337,99 @@ function update() {
         }
     }
 
-    // --- AI Boss ---
+    // --- AI Quỷ Vương (Boss) ---
     currentBoss.timer++;
     let distToPlayer = Math.abs(player.x - currentBoss.x);
 
     if (currentBoss.state === "IDLE") {
-        if (currentBoss.timer > 35) {
+        if (currentBoss.timer > 30) {
             currentBoss.timer = 0;
             let rand = Math.random();
-            if (distToPlayer < 90) {
-                currentBoss.state = rand > 0.4 ? "ATTACK_MELEE" : "ATTACK_AOE";
+            if (distToPlayer < 100) {
+                currentBoss.state = rand > 0.35 ? "ATTACK_MELEE" : "ATTACK_AOE";
             } else {
-                currentBoss.state = rand > 0.5 ? "ATTACK_RANGED" : "WALK";
+                currentBoss.state = rand > 0.45 ? "ATTACK_RANGED" : "WALK";
             }
         }
     } else if (currentBoss.state === "WALK") {
         currentBoss.facing = player.x < currentBoss.x ? -1 : 1;
-        currentBoss.x += currentBoss.facing * 2.5;
-        if (currentBoss.timer > 50 || distToPlayer < 80) {
+        currentBoss.x += currentBoss.facing * 3;
+        if (currentBoss.timer > 45 || distToPlayer < 90) {
             currentBoss.timer = 0;
             currentBoss.state = "IDLE";
         }
     } else if (currentBoss.state === "ATTACK_MELEE") {
-        if (currentBoss.timer === 18) {
+        if (currentBoss.timer === 15) {
             if (!player.invincible &&
-                player.x < currentBoss.x + currentBoss.width + 25 &&
-                player.x + player.width > currentBoss.x - 25 &&
+                player.x < currentBoss.x + currentBoss.width + 30 &&
+                player.x + player.width > currentBoss.x - 30 &&
                 player.y + player.height > currentBoss.y) {
-                player.hp -= (currentBoss.type === "BRANCH_2" ? 50 : 40);
+                let dmg = currentBoss.type === "BRANCH_2" ? 55 : 45;
+                player.hp -= dmg;
                 currentBoss.hitFlash = 10;
-                screenShake = 12;
-                spawnParticles(player.x + player.width/2, player.y + player.height/2, "#ff0000", 15);
+                screenShake = 14;
+                spawnParticles(player.x + player.width/2, player.y + player.height/2, "#ff0000", 18);
+                addFloatingText(`-${dmg}`, player.x, player.y, "#ff0000");
                 if (player.hp <= 0) gameState = "GAMEOVER";
             }
+        }
+        if (currentBoss.timer > 38) { currentBoss.timer = 0; currentBoss.state = "IDLE"; }
+    } else if (currentBoss.state === "ATTACK_AOE") {
+        if (currentBoss.timer === 20) {
+            screenShake = 24;
+            spawnParticles(currentBoss.x + currentBoss.width/2, currentBoss.y + currentBoss.height, "#ff4500", 25);
+            if (!player.invincible && Math.abs(player.x - currentBoss.x) < 110) {
+                let dmg = currentBoss.type === "BRANCH_2" ? 70 : 60;
+                player.hp -= dmg;
+                currentBoss.hitFlash = 12;
+                addFloatingText(`-${dmg}`, player.x, player.y, "#ff0000");
+                if (player.hp <= 0) gameState = "GAMEOVER";
+            }
+        }
+        if (currentBoss.timer > 50) { currentBoss.timer = 0; currentBoss.state = "IDLE"; }
+    } else if (currentBoss.state === "ATTACK_RANGED") {
+        if (currentBoss.timer === 16) {
+            projectiles.push({ x: currentBoss.x, y: currentBoss.y + 40, vx: currentBoss.facing * 7, radius: 9, color: currentBoss.type === "BRANCH_2" ? "#ff6f00" : "#9400d3" });
         }
         if (currentBoss.timer > 40) { currentBoss.timer = 0; currentBoss.state = "IDLE"; }
-    } else if (currentBoss.state === "ATTACK_AOE") {
-        if (currentBoss.timer === 22) {
-            screenShake = 22;
-            if (!player.invincible && Math.abs(player.x - currentBoss.x) < 100) {
-                player.hp -= (currentBoss.type === "BRANCH_2" ? 65 : 55);
-                currentBoss.hitFlash = 12;
-                spawnParticles(player.x + player.width/2, player.y + player.height/2, "#ff0000", 20);
-                if (player.hp <= 0) gameState = "GAMEOVER";
-            }
-        }
-        if (currentBoss.timer > 55) { currentBoss.timer = 0; currentBoss.state = "IDLE"; }
-    } else if (currentBoss.state === "ATTACK_RANGED") {
-        if (currentBoss.timer === 18) {
-            projectiles.push({ x: currentBoss.x, y: currentBoss.y + 30, vx: currentBoss.facing * 6, radius: 8 });
-        }
-        if (currentBoss.timer > 45) { currentBoss.timer = 0; currentBoss.state = "IDLE"; }
     }
 
-    // Đạn boss
+    // Đạn Quỷ
     for (let i = projectiles.length - 1; i >= 0; i--) {
         let p = projectiles[i];
         p.x += p.vx;
         if (!player.invincible &&
             p.x > player.x && p.x < player.x + player.width &&
             p.y > player.y && p.y < player.y + player.height) {
-            player.hp -= 30;
+            player.hp -= 35;
             player.hitFlash = 10;
-            screenShake = 10;
-            spawnParticles(player.x + player.width/2, player.y + player.height/2, "#ff0000", 12);
+            screenShake = 12;
+            spawnParticles(player.x + player.width/2, player.y + player.height/2, "#ff0000", 15);
+            addFloatingText("-35", player.x, player.y, "#ff0000");
             projectiles.splice(i, 1);
             if (player.hp <= 0) gameState = "GAMEOVER";
             continue;
         }
-        if (p.x < 0 || p.x > 800) projectiles.splice(i, 1);
+        if (p.x < 0 || p.x > 900) projectiles.splice(i, 1);
     }
 }
 
 function draw() {
     ctx.save();
     if (screenShake > 0) {
-        ctx.translate((Math.random() - 0.5) * (screenShake * 0.7), (Math.random() - 0.5) * (screenShake * 0.7));
+        ctx.translate((Math.random() - 0.5) * (screenShake * 0.8), (Math.random() - 0.5) * (screenShake * 0.8));
     }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Nền sân đấu (Đổi màu nếu ở màn phụ hầm ngục)
-    ctx.fillStyle = gameState === "SIDE_DUNGEON" ? "#1a0808" : "#161622";
-    ctx.fillRect(0, 420, 800, 80);
-    ctx.fillStyle = gameState === "SIDE_DUNGEON" ? "#e74c3c" : "#d4af37";
-    ctx.fillRect(0, 415, 800, 4);
+    // Nền sân đấu phong cách Dark Fantasy
+    let floorColor = gameState === "SIDE_DUNGEON" ? "#140508" : "#0d0d1a";
+    ctx.fillStyle = floorColor;
+    ctx.fillRect(0, 440, 900, 80);
+    ctx.fillStyle = gameState === "SIDE_DUNGEON" ? "#ff4d4d" : "#d4af37";
+    ctx.fillRect(0, 435, 900, 5);
 
+    // Vẽ tro tàn / hạt sáng
     for (let p of particles) {
         ctx.fillStyle = p.color || `rgba(212, 175, 55, ${p.alpha})`;
         ctx.fillRect(p.x, p.y, p.size, p.size);
@@ -411,169 +437,231 @@ function draw() {
 
     if (gameState === "START") {
         ctx.fillStyle = "#d4af37";
-        ctx.font = "24px 'Courier New'";
+        ctx.font = "bold 26px 'Cinzel', serif";
         ctx.textAlign = "center";
-        ctx.fillText("ELDEN PIXEL: ULTIMATE EDITION", canvas.width / 2, 150);
-        ctx.fillStyle = "#fff";
-        ctx.font = "12px 'Courier New'";
-        ctx.fillText("Săn Boss phụ trong Hầm Ngục [T] để nhận Vũ Khí Huyền Thoại!", canvas.width / 2, 200);
-        ctx.fillText("Nhấn [J] để bắt đầu hành trình", canvas.width / 2, 260);
+        ctx.fillText("ELDEN SOUL: DARK FANTASY", canvas.width / 2, 160);
+        ctx.fillStyle = "#a09580";
+        ctx.font = "13px 'Courier New'";
+        ctx.fillText("Thách thức các Chúa Tể Ác Quỷ trong Hầm Ngục [T] để sở hữu Vũ Khí Huyền Thoại!", canvas.width / 2, 210);
+        ctx.fillStyle = "#f1c40f";
+        ctx.fillText("Nhấn [J] để bắt đầu hành trình chiến đấu", canvas.width / 2, 270);
         ctx.restore();
         return;
     }
 
     // --- Vẽ NPC & Cổng Hầm Ngục ---
     if (gameState === "PLAYING") {
-        // NPC
-        ctx.fillStyle = "#e67e22";
-        ctx.fillRect(npc.x, npc.y, npc.width, npc.height);
+        // NPC Thương nhân Kale (Hình người áo choàng chi tiết)
+        ctx.fillStyle = "#d35400";
+        ctx.fillRect(npc.x, npc.y + 15, npc.width, npc.height - 15);
+        ctx.fillStyle = "#f39c12"; // Đầu NPC
+        ctx.beginPath(); ctx.arc(npc.x + npc.width/2, npc.y + 10, 10, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = "#fff";
-        ctx.font = "10px 'Courier New'";
+        ctx.font = "11px 'Courier New'";
         ctx.textAlign = "center";
-        ctx.fillText("Kale", npc.x + npc.width/2, npc.y - 8);
-        if (Math.abs(player.x - npc.x) < 60) {
+        ctx.fillText("Kale", npc.x + npc.width/2, npc.y - 5);
+        if (Math.abs(player.x - npc.x) < 70) {
             ctx.fillStyle = "#f1c40f";
-            ctx.fillText("Nhấn [E] Mở Shop", npc.x + npc.width/2, npc.y - 22);
+            ctx.fillText("Nhấn [E] Mở Shop", npc.x + npc.width/2, npc.y - 20);
         }
 
         // Cổng Hầm Ngục Phụ [T]
-        ctx.fillStyle = "#9b59b6";
-        ctx.fillRect(720, 360, 40, 60);
-        ctx.fillStyle = "#fff";
-        ctx.font = "10px 'Courier New'";
-        ctx.fillText("Hầm Ngục [T]", 740, 350);
+        ctx.fillStyle = "#8e44ad";
+        ctx.fillRect(810, 360, 50, 80);
+        ctx.strokeStyle = "#d4af37"; ctx.lineWidth = 2; ctx.strokeRect(810, 360, 50, 80);
+        ctx.fillStyle = "#fff"; ctx.font = "11px 'Courier New'";
+        ctx.fillText("Hầm Ngục [T]", 835, 345);
     }
 
-    // --- Vẽ Player ---
+    // --- Vẽ NHÂN VẬT CHÍNH (Chiến binh hình người chi tiết) ---
     if (player.isRolling) {
         ctx.beginPath();
-        ctx.arc(player.x + player.width/2, player.y + player.height/2, player.width/1.2, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(0, 255, 255, 0.4)";
+        ctx.arc(player.x + player.width/2, player.y + player.height/2, player.width/1.1, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0, 255, 255, 0.5)";
         ctx.fill();
     } else {
-        ctx.fillStyle = player.hitFlash > 0 ? "#ffffff" : (player.invincible ? "#00ffff" : "#e0e0e0");
-        ctx.fillRect(player.x, player.y, player.width, player.height);
+        let pColor = player.hitFlash > 0 ? "#ffffff" : (player.invincible ? "#00ffff" : "#d0d0d0");
         
+        // Áo giáp chiến binh
+        ctx.fillStyle = pColor;
+        ctx.fillRect(player.x + 4, player.y + 16, player.width - 8, player.height - 24); // Thân giáp
+        
+        // Đầu chiến binh & Mũ giáp
+        ctx.fillStyle = "#f1c40f";
+        ctx.beginPath(); ctx.arc(player.x + player.width/2, player.y + 10, 9, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#333";
+        ctx.fillRect(player.x + player.width/2 - (player.facing === 1 ? 0 : 6), player.y + 6, 6, 4); // Mắt kính chiến binh
+
+        // Chân tay cử động theo bước di chuyển
+        let legOffset = Math.sin(player.animFrame) * 6;
+        ctx.fillStyle = "#555";
+        ctx.fillRect(player.x + 6, player.y + player.height - 10, 6, 10 + legOffset);
+        ctx.fillRect(player.x + player.width - 12, player.y + player.height - 10, 6, 10 - legOffset);
+
+        // Vũ khí / Kiếm trên tay
         if (player.isAttacking) {
-            ctx.fillStyle = player.hasRiversOfBlood ? "#ff0000" : (player.hasMoonveil ? "#3498db" : "#ff5555");
+            let swordColor = player.hasRiversOfBlood ? "#ff2222" : (player.hasMoonveil ? "#00bfff" : "#f1c40f");
+            ctx.fillStyle = swordColor;
             let swordX = player.facing === 1 ? player.x + player.width : player.x - player.weaponRange;
-            ctx.fillRect(swordX, player.y + 10, player.weaponRange, 8);
+            ctx.fillRect(swordX, player.y + 18, player.weaponRange, 10);
+            
+            // Hiệu ứng ánh sáng kiếm
+            ctx.shadowColor = swordColor;
+            ctx.shadowBlur = 15;
+            ctx.fillRect(swordX, player.y + 18, player.weaponRange, 10);
+            ctx.shadowBlur = 0;
         }
     }
 
+    // Hiệu ứng vung kiếm (Slash Effects)
     for (let s of slashEffects) {
-        ctx.strokeStyle = s.color || "rgba(255, 255, 255, 0.8)";
+        ctx.strokeStyle = s.color || "rgba(255, 255, 255, 0.9)";
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        let startX = s.facing === 1 ? s.x + 10 : s.x + 30;
+        ctx.arc(startX, s.y + 25, 45, s.facing === 1 ? -Math.PI/3 : Math.PI - Math.PI/3, s.facing === 1 ? Math.PI/3 : Math.PI + Math.PI/3);
+        ctx.stroke();
+    }
+
+    // --- Vẽ BOSS QUỶ (Thiết kế Chúa tể Ác quỷ có sừng và cánh) ---
+    let b = currentBoss;
+    let bColor = b.hitFlash > 0 ? "#ffffff" : b.color;
+    
+    // Cánh Quỷ
+    ctx.fillStyle = b.wingColor;
+    if (b.facing === -1) {
+        ctx.beginPath(); ctx.moveTo(b.x + b.width/2, b.y + 20); ctx.lineTo(b.x + b.width + 30, b.y - 10); ctx.lineTo(b.x + b.width, b.y + 50); ctx.fill();
+    } else {
+        ctx.beginPath(); ctx.moveTo(b.x + b.width/2, b.y + 20); ctx.lineTo(b.x - 30, b.y - 10); ctx.lineTo(b.x, b.y + 50); ctx.fill();
+    }
+
+    // Thân Quỷ
+    ctx.fillStyle = bColor;
+    ctx.fillRect(b.x, b.y + 20, b.width, b.height - 20);
+
+    // Đầu Quỷ & Sừng
+    ctx.fillStyle = "#1a1a1a";
+    ctx.beginPath(); ctx.arc(b.x + b.width/2, b.y + 14, 14, 0, Math.PI*2); ctx.fill();
+    // Sừng quỷ
+    ctx.fillStyle = "#d4af37";
+    ctx.beginPath();
+    ctx.moveTo(b.x + b.width/2 - 8, b.y + 6); ctx.lineTo(b.x + b.width/2 - 16, b.y - 8); ctx.lineTo(b.x + b.width/2 - 4, b.y + 4);
+    ctx.moveTo(b.x + b.width/2 + 8, b.y + 6); ctx.lineTo(b.x + b.width/2 + 16, b.y - 8); ctx.lineTo(b.x + b.width/2 + 4, b.y + 4);
+    ctx.fill();
+
+    // Mắt quỷ rực sáng
+    ctx.fillStyle = "#ff0000";
+    let bEyeX = b.facing === -1 ? b.x + 8 : b.x + b.width - 16;
+    ctx.fillRect(bEyeX, b.y + 10, 8, 5);
+
+    if (b.state === "ATTACK_AOE") {
+        ctx.strokeStyle = "rgba(255, 69, 0, 0.7)";
         ctx.lineWidth = 5;
         ctx.beginPath();
-        let startX = s.facing === 1 ? s.x + 20 : s.x + 20;
-        ctx.arc(startX, s.y + 20, 40, s.facing === 1 ? -Math.PI/3 : Math.PI - Math.PI/3, s.facing === 1 ? Math.PI/3 : Math.PI + Math.PI/3);
+        ctx.arc(b.x + b.width/2, b.y + b.height, 90, 0, Math.PI, true);
         ctx.stroke();
     }
 
-    // --- Vẽ Boss Hiện Tại ---
-    ctx.fillStyle = currentBoss.hitFlash > 0 ? "#ffffff" : (currentBoss.state.includes("ATTACK") ? "#ff3333" : (currentBoss.type === "BRANCH_2" ? "#4a0e4e" : "#8b0000"));
-    ctx.fillRect(currentBoss.x, currentBoss.y, currentBoss.width, currentBoss.height);
-    ctx.fillStyle = "#ffff00";
-    let eyeX = currentBoss.facing === -1 ? currentBoss.x + 10 : currentBoss.x + currentBoss.width - 18;
-    ctx.fillRect(eyeX, currentBoss.y + 15, 8, 8);
-
-    if (currentBoss.state === "ATTACK_AOE") {
-        ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(currentBoss.x + currentBoss.width/2, currentBoss.y + currentBoss.height, 80, 0, Math.PI, true);
-        ctx.stroke();
-    }
-
-    // --- Đạn ---
-    ctx.fillStyle = "#b026ff";
+    // Đạn Quỷ bay
     for (let p of projectiles) {
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 12;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fill();
+        ctx.shadowBlur = 0;
     }
 
-    // --- UI Giao diện ---
+    // Hiệu ứng chữ sát thương bay lên
+    for (let ft of floatingTexts) {
+        ctx.fillStyle = ft.color;
+        ctx.font = "bold 14px 'Courier New'";
+        ctx.textAlign = "center";
+        ctx.fillText(ft.text, ft.x, ft.y);
+    }
+
+    // --- UI GIAO DIỆN HIỆN ĐẠI ---
     // Máu Player
-    ctx.fillStyle = "#333"; ctx.fillRect(30, 30, 200, 16);
-    ctx.fillStyle = "#2ecc71"; ctx.fillRect(30, 30, (player.hp / player.maxHp) * 200, 16);
-    ctx.strokeStyle = "#fff"; ctx.strokeRect(30, 30, 200, 16);
-    ctx.fillStyle = "#fff"; ctx.font = "11px 'Courier New'"; ctx.textAlign = "left";
-    ctx.fillText("HP", 10, 43);
+    ctx.fillStyle = "#111"; ctx.fillRect(35, 30, 220, 18);
+    ctx.fillStyle = "#2ecc71"; ctx.fillRect(35, 30, (player.hp / player.maxHp) * 220, 18);
+    ctx.strokeStyle = "#d4af37"; ctx.lineWidth = 2; ctx.strokeRect(35, 30, 220, 18);
+    ctx.fillStyle = "#fff"; ctx.font = "bold 12px 'Cinzel'"; ctx.textAlign = "left";
+    ctx.fillText("HP", 12, 44);
 
-    // Stamina
-    ctx.fillStyle = "#333"; ctx.fillRect(30, 52, 150, 10);
-    ctx.fillStyle = "#3498db"; ctx.fillRect(30, 52, (player.stamina / player.maxStamina) * 150, 10);
-    ctx.strokeStyle = "#fff"; ctx.strokeRect(30, 52, 150, 10);
-    ctx.fillStyle = "#fff"; ctx.fillText("STA", 5, 60);
+    // Thể lực (Stamina)
+    ctx.fillStyle = "#111"; ctx.fillRect(35, 56, 170, 10);
+    ctx.fillStyle = "#3498db"; ctx.fillRect(35, 56, (player.stamina / player.maxStamina) * 170, 10);
+    ctx.strokeStyle = "#d4af37"; ctx.lineWidth = 1; ctx.strokeRect(35, 56, 170, 10);
+    ctx.fillStyle = "#fff"; ctx.font = "10px 'Courier New'"; ctx.fillText("STA", 10, 64);
 
-    // Runes & Flasks & Vũ khí
-    ctx.fillStyle = "#d4af37"; ctx.fillText(`Runes: ${player.runes} R`, 30, 82);
-    ctx.fillStyle = "#2ecc71"; ctx.fillText(`Bình Máu (Q): ${player.flasks}/${player.maxFlasks}`, 150, 82);
-    ctx.fillStyle = "#e74c3c"; ctx.fillText(`Vũ khí: ${player.weapon}`, 30, 102);
+    // Runes, Flasks, Vũ khí
+    ctx.fillStyle = "#f1c40f"; ctx.fillText(`Runes: ${player.runes} R`, 35, 88);
+    ctx.fillStyle = "#2ecc71"; ctx.fillText(`Bình Máu (Q): ${player.flasks}/${player.maxFlasks}`, 165, 88);
+    ctx.fillStyle = "#ff6b6b"; ctx.fillText(`Vũ Khí: ${player.weapon}`, 35, 110);
 
-    // Máu Boss
-    ctx.fillStyle = "#333"; ctx.fillRect(250, 20, 300, 12);
-    ctx.fillStyle = "#e74c3c"; ctx.fillRect(250, 20, (currentBoss.hp / currentBoss.maxHp) * 300, 12);
-    ctx.strokeStyle = "#d4af37"; ctx.strokeRect(250, 20, 300, 12);
-    ctx.fillStyle = "#d4af37"; ctx.textAlign = "center"; ctx.font = "11px 'Courier New'";
-    ctx.fillText(currentBoss.name.toUpperCase(), 400, 14);
+    // Thanh Máu Boss Quỷ
+    ctx.fillStyle = "#111"; ctx.fillRect(280, 25, 340, 16);
+    ctx.fillStyle = "#e74c3c"; ctx.fillRect(280, 25, (currentBoss.hp / currentBoss.maxHp) * 340, 16);
+    ctx.strokeStyle = "#d4af37"; ctx.lineWidth = 2; ctx.strokeRect(280, 25, 340, 16);
+    ctx.fillStyle = "#f1c40f"; ctx.textAlign = "center"; ctx.font = "bold 13px 'Cinzel'";
+    ctx.fillText(currentBoss.name.toUpperCase(), 450, 18);
 
-    // --- GIAO DIỆN HẦM NGỤC PHỤ (SIDE DUNGEON MENU) ---
+    // --- GIAO DIỆN HẦM NGỤC PHỤ (SIDE DUNGEON) ---
     if (gameState === "SIDE_DUNGEON") {
-        ctx.fillStyle = "rgba(10, 10, 15, 0.92)";
-        ctx.fillRect(150, 80, 500, 340);
+        ctx.fillStyle = "rgba(10, 8, 15, 0.95)";
+        ctx.fillRect(180, 80, 540, 360);
         ctx.strokeStyle = "#e74c3c"; ctx.lineWidth = 3;
-        ctx.strokeRect(150, 80, 500, 340);
+        ctx.strokeRect(180, 80, 540, 360);
 
-        ctx.fillStyle = "#e74c3c"; ctx.font = "18px 'Courier New'"; ctx.textAlign = "center";
-        ctx.fillText("HẦM NGỤC THỬ THÁCH (BOSS NHÁNH)", 400, 120);
+        ctx.fillStyle = "#ff4d4d"; ctx.font = "bold 20px 'Cinzel'"; ctx.textAlign = "center";
+        ctx.fillText("HẦM NGỤC THỬ THÁCH CHÚA TỂ QUỶ", 450, 125);
 
-        ctx.fillStyle = "#fff"; ctx.font = "12px 'Courier New'"; ctx.textAlign = "left";
-        ctx.fillText("[1] Vệ Binh Rừng Sâu (Phần thưởng: Moonveil)", 180, 180);
+        ctx.fillStyle = "#fff"; ctx.font = "13px 'Courier New'"; ctx.textAlign = "left";
+        ctx.fillText("[1] Azazel - Quỷ Vương Rừng Sâu (Nhận Moonveil)", 210, 190);
         ctx.fillStyle = bosses.branch1.defeated ? "#2ecc71" : "#f1c40f";
-        ctx.fillText(bosses.branch1.defeated ? "   -> Đã hạ gục" : "   -> Chưa hạ gục", 180, 200);
+        ctx.fillText(bosses.branch1.defeated ? "   -> Đã Tiêu Diệt" : "   -> Sẵn Sàng Khiêu Chiến", 210, 215);
 
         ctx.fillStyle = bosses.branch2.unlocked ? "#fff" : "#555";
-        ctx.fillText("[2] Kỵ Sĩ Hắc Ám (Phần thưởng: Rivers of Blood)", 180, 250);
+        ctx.fillText("[2] Balrog - Kỵ Sĩ Hỏa Ngục (Nhận Rivers of Blood)", 210, 270);
         ctx.fillStyle = bosses.branch2.defeated ? "#2ecc71" : (bosses.branch2.unlocked ? "#f1c40f" : "#555");
-        ctx.fillText(bosses.branch2.defeated ? "   -> Đã hạ gục" : (bosses.branch2.unlocked ? "   -> Đã mở khóa" : "   -> Cần hạ Vệ Binh Rừng Sâu trước"), 180, 270);
+        ctx.fillText(bosses.branch2.defeated ? "   -> Đã Tiêu Diệt" : (bosses.branch2.unlocked ? "   -> Đã Mở Khóa" : "   -> Cần hạ Azazel trước"), 210, 295);
 
         ctx.fillStyle = "#f1c40f"; ctx.textAlign = "center";
-        ctx.fillText("Nhấn [ESC] để quay về khu vực chính", 400, 380);
+        ctx.fillText("Nhấn [ESC] để quay về khu vực chính", 450, 400);
     }
 
-    // --- GIAO DIỆN CỬA HÀNG ---
+    // --- GIAO DIỆN SHOP THƯƠNG NHÂN ---
     if (gameState === "SHOP") {
-        ctx.fillStyle = "rgba(10, 10, 15, 0.92)"; ctx.fillRect(150, 80, 500, 340);
-        ctx.strokeStyle = "#d4af37"; ctx.lineWidth = 3; ctx.strokeRect(150, 80, 500, 340);
+        ctx.fillStyle = "rgba(10, 8, 15, 0.95)"; ctx.fillRect(180, 80, 540, 360);
+        ctx.strokeStyle = "#d4af37"; ctx.lineWidth = 3; ctx.strokeRect(180, 80, 540, 360);
 
-        ctx.fillStyle = "#d4af37"; ctx.font = "18px 'Courier New'"; ctx.textAlign = "center";
-        ctx.fillText("CỬA HÀNG THƯƠNG NHÂN KALE", 400, 120);
+        ctx.fillStyle = "#d4af37"; ctx.font = "bold 20px 'Cinzel'"; ctx.textAlign = "center";
+        ctx.fillText("CỬA HÀNG THƯƠNG NHÂN KALE", 450, 125);
 
-        ctx.fillStyle = "#fff"; ctx.font = "12px 'Courier New'"; ctx.textAlign = "left";
-        ctx.fillText(`Runes: ${player.runes} R`, 180, 155);
-        ctx.fillText("[1] Mua Bình Máu (+1 Flask) - Giá: 50 R", 180, 200);
-        ctx.fillText("[2] Tăng Máu Tối Đa (+30 HP) - Giá: 80 R", 180, 240);
-        ctx.fillText("[3] Tăng Tốc Hồi Thể Lực - Giá: 100 R", 180, 280);
-        ctx.fillStyle = "#888"; ctx.fillText('"' + npc.dialogue + '"', 180, 340);
-        ctx.fillStyle = "#f1c40f"; ctx.textAlign = "center"; ctx.fillText("Nhấn [E] hoặc [ESC] để quay lại", 400, 390);
+        ctx.fillStyle = "#fff"; ctx.font = "13px 'Courier New'"; ctx.textAlign = "left";
+        ctx.fillText(`Runes sở hữu: ${player.runes} R`, 210, 160);
+        ctx.fillText("[1] Mua Thêm Bình Máu (+1 Flask) - Giá: 60 R", 210, 210);
+        ctx.fillText("[2] Tăng Máu Tối Đa (+40 HP)     - Giá: 90 R", 210, 255);
+        ctx.fillText("[3] Tăng Tốc Hồi Thể Lực          - Giá: 120 R", 210, 300);
+        ctx.fillStyle = "#a09580"; ctx.fillText('"Hãy mạnh mẽ lên chiến binh, các ác quỷ đang chờ ngươi!"', 210, 360);
+        ctx.fillStyle = "#f1c40f"; ctx.textAlign = "center"; ctx.fillText("Nhấn [E] hoặc [ESC] để quay lại", 450, 415);
     }
 
     // --- Game Over / Victory ---
     if (gameState === "GAMEOVER") {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.85)"; ctx.fillRect(-50, -50, canvas.width + 100, canvas.height + 100);
-        ctx.fillStyle = "#ff0000"; ctx.font = "34px 'Courier New'"; ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(0, 0, 0, 0.9)"; ctx.fillRect(-50, -50, canvas.width + 100, canvas.height + 100);
+        ctx.fillStyle = "#ff0000"; ctx.font = "bold 40px 'Cinzel'"; ctx.textAlign = "center";
         ctx.fillText("YOU DIED", canvas.width / 2, canvas.height / 2 - 20);
-        ctx.fillStyle = "#fff"; ctx.font = "13px 'Courier New'";
-        ctx.fillText("Nhấn [R] để phục sinh", canvas.width / 2, canvas.height / 2 + 20);
+        ctx.fillStyle = "#fff"; ctx.font = "14px 'Courier New'";
+        ctx.fillText("Nhấn [R] để phục sinh và thử lại", canvas.width / 2, canvas.height / 2 + 25);
     } else if (gameState === "VICTORY") {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.85)"; ctx.fillRect(-50, -50, canvas.width + 100, canvas.height + 100);
-        ctx.fillStyle = "#d4af37"; ctx.font = "30px 'Courier New'"; ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(0, 0, 0, 0.9)"; ctx.fillRect(-50, -50, canvas.width + 100, canvas.height + 100);
+        ctx.fillStyle = "#d4af37"; ctx.font = "bold 36px 'Cinzel'"; ctx.textAlign = "center";
         ctx.fillText("VICTORY ACHIEVED", canvas.width / 2, canvas.height / 2 - 20);
-        ctx.fillStyle = "#fff"; ctx.font = "13px 'Courier New'";
-        ctx.fillText("Bạn đã chinh phục toàn bộ trùm cuối!", canvas.width / 2, canvas.height / 2 + 20);
-        ctx.fillText("Nhấn [R] để chơi lại", canvas.width / 2, canvas.height / 2 + 50);
+        ctx.fillStyle = "#fff"; ctx.font = "14px 'Courier New'";
+        ctx.fillText("Bạn đã tiêu diệt toàn bộ Chúa Tể Ác Quỷ!", canvas.width / 2, canvas.height / 2 + 25);
+        ctx.fillText("Nhấn [R] để tiếp tục hành trình", canvas.width / 2, canvas.height / 2 + 55);
     }
 
     ctx.restore();
