@@ -6,7 +6,7 @@
     <title>>Elden Pixel - Hardcore Souls-like</title>
 </head>
 <body>
-   {
+  {
             margin: 0;
             background-color: #060609;
             color: #e0e0e0;
@@ -45,7 +45,7 @@
     <h1>Elden Pixel: Ultimate RPG Edition</h1>
     <canvas id="gameCanvas" width="800" height="500"></canvas>
     <div class="controls">
-        Di chuyển: <span>A / D</span> | Nhảy: <span>W</span> | Tấn công: <span>J</span> | Né: <span>K</span> | Uống máu: <span>Q</span> | Cửa hàng: <span>E</span> | Vào Màn Phụ: <span>T</span>
+        Di chuyển: <span>A / D</span> | Nhảy: <span>W</span> | Tấn công: <span>J</span> | Né: <span>K</span> | Uống máu: <span>Q</span> | Cửa hàng: <span>E</span> | Vào Hầm Ngục Phụ: <span>T</span>
     </div>
 
 <script>
@@ -86,7 +86,7 @@ let bosses = {
         hp: 500, maxHp: 500, state: "IDLE", timer: 0, facing: -1, hitFlash: 0, reward: 200, type: "MAIN"
     },
     branch1: {
-        name: "Vệ Binh Rừng Sâu (Tree Sentinel Jr)", x: 600, y: 340, width: 45, height: 75,
+        name: "Vệ Binh Rừng Sâu (Tree Sentinel)", x: 600, y: 340, width: 45, height: 75,
         hp: 350, maxHp: 350, state: "IDLE", timer: 0, facing: -1, hitFlash: 0, reward: 150, type: "BRANCH_1",
         unlocked: true, defeated: false
     },
@@ -98,7 +98,6 @@ let bosses = {
 };
 
 let currentBoss = bosses.main;
-
 let projectiles = [];
 let keys = {};
 
@@ -250,7 +249,7 @@ function update() {
             player.isAttacking = true;
             player.attackTimer = 15;
             let slashX = player.facing === 1 ? player.x + player.width : player.x - 40;
-            let slashColor = player.weapon === "Moonveil" ? "#3498db" : (player.weapon === "Rivers of Blood" ? "#e74c3c" : "#fff");
+            let slashColor = player.weapon.includes("Moonveil") ? "#3498db" : (player.weapon.includes("Rivers") ? "#e74c3c" : "#fff");
             slashEffects.push({ x: slashX, y: player.y, facing: player.facing, life: 10, color: slashColor });
         }
     }
